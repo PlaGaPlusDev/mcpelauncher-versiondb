@@ -19,6 +19,19 @@ WIKI_URL = "https://minecraft.wiki"
 ARCH_PREFIXES = {"armeabi-v7a": 95, "x86": 96, "arm64-v8a": 97, "x86_64": 98}
 ARCHES = ["armeabi-v7a", "x86", "arm64-v8a", "x86_64"]
 
+_B_PAD = re.compile(r"^([0-9])\.")
+_M_PAD = re.compile(r"\.([0-9])\.")
+_E_PAD = re.compile(r"\.b?([0-9])$")
+
+def _natural_key(v):
+    if isinstance(v, str):
+        name = v
+    elif isinstance(v, list):
+        name = v[1]
+    else:
+        name = v["version_name"]
+    return _E_PAD.sub(r".0\1", _M_PAD.sub(r".0\1.", _M_PAD.sub(r".0\1.", _B_PAD.sub(r"0\1.", name))))
+
 PAGES = [
     "Bedrock Edition 26.22", "Bedrock Edition 26.23",
     "Bedrock Edition 26.30",  # release build 5
@@ -117,7 +130,7 @@ def main():
             if arch in v["codes"]:
                 entry = [v["codes"][arch], v["version_name"], 1 if v.get("beta") else 0]
                 lookup[(v["version_name"], 1 if v.get("beta") else 0)] = entry
-        merged = sorted(lookup.values(), key=lambda e: e[1])
+        merged = sorted(lookup.values(), key=_natural_key)
         with open(path, "w") as f:
             json.dump(merged, f, separators=(",", ":"))
         added = len(merged) - len(existing)
@@ -133,7 +146,7 @@ def main():
                 lookup[v["version_name"]]["beta"] = True
         else:
             lookup[v["version_name"]] = v
-    merged = sorted(lookup.values(), key=lambda v: v["version_name"])
+    merged = sorted(lookup.values(), key=_natural_key)
     with open(path, "w") as f:
         json.dump(merged, f, indent=4)
     print(f"versions.json: {len(merged)} entries")
