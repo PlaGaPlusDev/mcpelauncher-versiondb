@@ -22,7 +22,9 @@ import sys
 import urllib.request
 import urllib.error
 
-WARN_FILE = os.path.join(os.path.dirname(__file__), "version-warnings.json")
+REPO_DIR = os.path.dirname(os.path.abspath(__file__))
+WARN_FILE = os.path.join(REPO_DIR, "version-warnings.json")
+LOCAL_VDB = os.path.join(REPO_DIR, "versions.x86_64.json.min")
 VERSIONDB_URL = "https://raw.githubusercontent.com/PlaGaPlusDev/mcpelauncher-versiondb/master/versions.x86_64.json.min"
 
 if os.environ.get("NO_COLOR") or not sys.stdout.isatty():
@@ -51,7 +53,17 @@ def _natural_key(v: str):
 
 
 def _fetch_versiondb() -> dict[str, int]:
-    """Returns {version: is_beta} where is_beta=0 release, 1 beta."""
+    """Returns {version: is_beta} where is_beta=0 release, 1 beta.
+    Tries local file first, falls back to GitHub raw URL."""
+    if os.path.exists(LOCAL_VDB):
+        try:
+            with open(LOCAL_VDB) as f:
+                return {e[1]: e[2] for e in json.load(f)}
+        except Exception as e:
+            print(f"warning: couldn't read local versiondb ({e}), falling back to GitHub")
+    else:
+        print("warning: local versiondb not found, fetching from GitHub")
+
     req = urllib.request.Request(
         VERSIONDB_URL,
         headers={"User-Agent": "warnings-script/1.0",
@@ -118,7 +130,7 @@ def cmd_versions(filtro: str | None):
 
 
 def cmd_sync():
-    repo = os.path.dirname(os.path.abspath(__file__))
+    repo = REPO_DIR
     branch = sp.run(["git", "branch", "--show-current"], capture_output=True, text=True, cwd=repo).stdout.strip()
 
     print("=> git pull origin master...")
@@ -132,7 +144,7 @@ def cmd_sync():
         print("error: git push failed")
         sys.exit(1)
 
-    print("ok: synced gh-pages")
+    print("ok: synced master")
 
 
 def cmd_remove(version: str):

@@ -2,7 +2,8 @@
 
 Usage: python wiki_scraper.py [output_dir]
 
-Scrapes specific known-missing version pages and merges codes into existing db.
+Dynamically discovers version pages from the wiki's version history
+and development versions pages, then merges codes into existing db.
 """
 import json
 import os
@@ -23,6 +24,7 @@ _B_PAD = re.compile(r"^([0-9])\.")
 _M_PAD = re.compile(r"\.([0-9])\.")
 _E_PAD = re.compile(r"\.b?([0-9])$")
 
+
 def _natural_key(v):
     if isinstance(v, str):
         name = v
@@ -31,15 +33,6 @@ def _natural_key(v):
     else:
         name = v["version_name"]
     return _E_PAD.sub(r".0\1", _M_PAD.sub(r".0\1.", _M_PAD.sub(r".0\1.", _B_PAD.sub(r"0\1.", name))))
-
-PAGES = [
-    "Bedrock Edition 26.22", "Bedrock Edition 26.23",
-    "Bedrock Edition 26.30",  # release build 5
-    "Bedrock Edition Preview 26.30.29", "Bedrock Edition Preview 26.30.31",
-    "Bedrock Edition Preview 26.30.32", "Bedrock Edition 26.31",
-    "Bedrock Edition Preview 26.40.20", "Bedrock Edition Preview 26.40.22",
-    "Bedrock Edition Preview 26.40.26",
-]
 
 
 def curl_get(url: str) -> str:
@@ -82,7 +75,6 @@ def parse_name_and_beta(title: str, wt: str) -> tuple[str, bool]:
         rest = rest[5:]
         is_beta = True
 
-    # For releases (non-preview), try server version for proper build suffix
     if not is_beta:
         server = parse_infobox_field(wt, 'server')
         if server:
@@ -91,31 +83,67 @@ def parse_name_and_beta(title: str, wt: str) -> tuple[str, bool]:
                 name = m.group(1)
                 return name, False
 
-    # For previews or fallback: normalize title name
     if re.match(r'^\d{2}\.', rest):
         rest = "1." + rest
     return rest, is_beta
 
 
+def discover_pages() -> list[str]:
+    """Discover Bedrock Edition version pages for the current major version (26.x)."""
+    pages = []
+    seen = set()
+
+    wt = fetch_wikitext("Bedrock Edition version history")
+    if wt:
+        m = re.search(r"=== 26\.''x'' ===\n(.*?)(?:\n=== \d)", wt, re.DOTALL)
+        if m:
+            section = m.group(1)
+            for v in re.finditer(r'\[\[Bedrock Edition ([\d.]+?)(?:\|.*?)?\]\]', section):
+                title = f"Bedrock Edition {v.group(1)}"
+                if title not in seen:
+                    seen.add(title)
+                    pages.append(title)
+
+    wt_dev = fetch_wikitext("Bedrock Edition version history/Development versions")
+    if wt_dev:
+        m = re.search(r"== 26\.''x'' ==\n(.*?)(?:\n== \d)", wt_dev, re.DOTALL)
+        if m:
+            section = m.group(1)
+            for v in re.finditer(r'\[\[(Bedrock Edition (?:Preview|beta) [\d.]+?)\|', section):
+                title = v.group(1)
+                if title not in seen:
+                    seen.add(title)
+                    pages.append(title)
+
+    return pages
+
+
 def main():
     output_dir = sys.argv[1] if len(sys.argv) > 1 else "."
-    new_entries = []
 
-    for title in PAGES:
+    pages = discover_pages()
+    if not pages:
+        print("WARN: could not discover any version pages from the wiki")
+        return
+
+    print(f"Discovered {len(pages)} version pages for 26.x")
+
+    new_entries = []
+    for title in pages:
         wt = fetch_wikitext(title)
         if not wt:
-            print(f"EMPTY: {title}")
+            print(f"  EMPTY: {title}")
             continue
         codes = parse_version_codes(wt)
         if not codes:
-            print(f"SKIP: {title} (no versioncode)")
+            print(f"  SKIP: {title} (no versioncode)")
             continue
         db_name, is_beta = parse_name_and_beta(title, wt)
         entry = {"version_name": db_name, "codes": codes}
         if is_beta:
             entry["beta"] = True
         new_entries.append(entry)
-        print(f"OK: {db_name} x86_64={codes.get('x86_64','?')}")
+        print(f"  OK: {db_name}  x86_64={codes.get('x86_64','?')}")
         time.sleep(0.3)
 
     if not new_entries:
