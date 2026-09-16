@@ -1,25 +1,13 @@
 {
   "schema": 1,
-  "updated": "2026-06-21",
+  "updated": "2026-09-16",
   "warnings": [
     {
-      "version": "1.26.10.4",
-      "reason": "Bug during animations on x86_64 builds for Minecraft Bedrock"
+      "version": "1.26.50.5",
+      "reason": "major changes in version 26.5x"
     },
     {
-      "version": "1.26.12.2",
-      "reason": "Bug during animations on x86_64 builds for Minecraft Bedrock"
-    },
-    {
-      "version": "1.26.13.1",
-      "reason": "Bug during animations on x86_64 builds for Minecraft Bedrock"
-    },
-    {
-      "version": "1.26.20.4",
-      "reason": "Bug during animations on x86_64 builds for Minecraft Bedrock"
-    },
-    {
-      "version": "1.26.21.1",
+      "version": "1.26.23.1",
       "reason": "Bug during animations on x86_64 builds for Minecraft Bedrock"
     },
     {
@@ -27,7 +15,23 @@
       "reason": "Bug during animations on x86_64 builds for Minecraft Bedrock"
     },
     {
-      "version": "1.26.23.1",
+      "version": "1.26.21.1",
+      "reason": "Bug during animations on x86_64 builds for Minecraft Bedrock"
+    },
+    {
+      "version": "1.26.20.4",
+      "reason": "Bug during animations on x86_64 builds for Minecraft Bedrock"
+    },
+    {
+      "version": "1.26.13.1",
+      "reason": "Bug during animations on x86_64 builds for Minecraft Bedrock"
+    },
+    {
+      "version": "1.26.12.2",
+      "reason": "Bug during animations on x86_64 builds for Minecraft Bedrock"
+    },
+    {
+      "version": "1.26.10.4",
       "reason": "Bug during animations on x86_64 builds for Minecraft Bedrock"
     }
   ]
