@@ -1,11 +1,11 @@
 """Manage version-warnings.json for CianovaLauncher.
 
 Usage:
-  python warnings.py list
-  python warnings.py add <version> <reason>
-  python warnings.py remove <version>
-  python warnings.py versions [filter]
-  python warnings.py sync
+  python version_warnings.py list
+  python version_warnings.py add <version> <reason>
+  python version_warnings.py remove <version>
+  python version_warnings.py versions [filter]
+  python version_warnings.py sync
 
 - list:        show current warnings
 - add:         add/update a warning (validates against versiondb)
@@ -168,12 +168,12 @@ if __name__ == "__main__":
         cmd_list()
     elif cmd == "add":
         if len(sys.argv) < 4:
-            print("usage: warnings.py add <version> <reason>")
+            print("usage: version_warnings.py add <version> <reason>")
             sys.exit(1)
         cmd_add(sys.argv[2], " ".join(sys.argv[3:]))
     elif cmd == "remove":
         if len(sys.argv) < 3:
-            print("usage: warnings.py remove <version>")
+            print("usage: version_warnings.py remove <version>")
             sys.exit(1)
         cmd_remove(sys.argv[2])
     elif cmd == "versions":
